@@ -34,7 +34,7 @@ impl Board {
         }
     }
 
-    fn get_state(&self) -> State {
+    fn get_new_state(&self) -> State {
         for row in 0..3 {
             let mark = self.marks[row * 3];
             if mark.is_none() {
@@ -99,16 +99,28 @@ impl Board {
         match self.state {
             State::Turn(mark) => {
                 self.marks[index] = Some(mark);
+                self.state = State::Turn(mark.other());
+                self.state = self.get_new_state();
+                Some(())
             }
             _ => {
                 return None;
             }
         }
-        Some(())
     }
 }
 
 fn main() {
     let mut board = Board::new();
+    while let State::Turn(_) = board.state {
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        let input: usize = match input.trim().parse() {
+            Ok(u) => u,
+            Err(_) => {continue;}
+        };
+        board.place(input);
+    }
+
     println!("Hello, world!");
 }
