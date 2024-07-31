@@ -211,6 +211,7 @@ fn minimax(node: MiniMaxNode) -> MiniMaxNode {
 fn main() {
     let mut board = Board::new();
     while let State::Turn(_) = board.state {
+        println!("Your turn (X)");
         board.print();
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
@@ -223,6 +224,7 @@ fn main() {
         }
         board.print();
         if !board.is_full() {
+            println!("Bot's turn (O)");
             let mve = MiniMaxNode::new(&board);
             board.place(mve.calculate() as usize);
         }
