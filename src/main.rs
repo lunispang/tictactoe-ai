@@ -203,7 +203,7 @@ fn minimax(node: MiniMaxNode, memory: &mut HashMap<Board, MiniMaxNode>) -> MiniM
                     }
                     let results: Vec<MiniMaxNode> =
                         results.into_iter().map(|r| minimax(r, memory)).collect();
-                    results
+                    let ret = results
                         .iter()
                         .min_by_key(|n| match n.kind {
                             NodeType::Unfinished(_) => {
@@ -212,7 +212,9 @@ fn minimax(node: MiniMaxNode, memory: &mut HashMap<Board, MiniMaxNode>) -> MiniM
                             NodeType::Value(i) => i * m.to_value() * n.moves.len() as i8,
                         })
                         .unwrap()
-                        .clone()
+                        .clone();
+                    memory.insert(board, ret.clone());
+                    ret
                 }
                 State::Tie => MiniMaxNode {
                     moves: node.moves,
@@ -220,7 +222,7 @@ fn minimax(node: MiniMaxNode, memory: &mut HashMap<Board, MiniMaxNode>) -> MiniM
                 },
             }
         }
-        _ => todo!(),
+        _ => node,
     }
 }
 
