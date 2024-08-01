@@ -187,14 +187,13 @@ fn minimax(node: MiniMaxNode) -> MiniMaxNode {
                             }
                         )
                     }
-                    let mut results: Vec<MiniMaxNode> = results.into_iter().map(|r| minimax(r)).collect();
-                    results.sort_by_key(|n| {
+                    let results: Vec<MiniMaxNode> = results.into_iter().map(|r| minimax(r)).collect();
+                    results.iter().min_by_key(|n| {
                         match n.kind {
                             NodeType::Unfinished(_) => panic!("either memory or the rules of tic tac toe are broken"),
                             NodeType::Value(i) => i * m.to_value(),
                         }
-                    });
-                    return results[0].clone();
+                    }).unwrap().clone()
                 },
                 State::Tie => MiniMaxNode {moves: node.moves, kind: NodeType::Value(0)}
             }
@@ -211,6 +210,7 @@ fn minimax(node: MiniMaxNode) -> MiniMaxNode {
 fn main() {
     let mut board = Board::new();
     while let State::Turn(_) = board.state {
+        print!("\x1B[2J");
         println!("Your turn (X)");
         board.print();
         let mut input = String::new();
@@ -221,6 +221,7 @@ fn main() {
         };
         if board.place(input).is_none() {
             println!("Invalid move.");
+            continue;
         }
         board.print();
         if !board.is_full() {
