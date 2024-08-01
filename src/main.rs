@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 enum Mark {
     O,
@@ -27,14 +29,14 @@ impl Mark {
     }
 }
 
-#[derive(Clone, PartialEq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 enum State {
     Turn(Mark),
     Won(Mark),
     Tie,
 }
 
-#[derive(Clone, PartialEq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct Board {
     marks: [Option<Mark>; 9],
     state: State,
@@ -159,12 +161,13 @@ impl MiniMaxNode {
         }
     }
     fn calculate(self) -> u8 {
-        let res = minimax(self);
+        let mut memory = HashMap::new();
+        let res = minimax(self, &mut memory);
         return *res.moves.last().unwrap();
     }
 }
 
-fn minimax(node: MiniMaxNode) -> MiniMaxNode {
+fn minimax(node: MiniMaxNode, memory: &mut HashMap<Board, MiniMaxNode>) -> MiniMaxNode {
     match node.kind {
         NodeType::Unfinished(board) => {
             let state = board.get_new_state();
@@ -185,17 +188,21 @@ fn minimax(node: MiniMaxNode) -> MiniMaxNode {
                     for mve in possible {
                         let mut new_board = board.clone();
                         new_board.place(mve as usize).unwrap();
-                        results.push(MiniMaxNode {
-                            moves: {
-                                let mut new = node.moves.clone();
-                                new.push(mve);
-                                new
-                            },
-                            kind: NodeType::Unfinished(new_board),
-                        })
+                        if !memory.contains_key(&new_board) {
+                            results.push(MiniMaxNode {
+                                moves: {
+                                    let mut new = node.moves.clone();
+                                    new.push(mve);
+                                    new
+                                },
+                                kind: NodeType::Unfinished(new_board),
+                            })
+                        } else {
+                            results.push(memory[&new_board].clone());
+                        }
                     }
                     let results: Vec<MiniMaxNode> =
-                        results.into_iter().map(|r| minimax(r)).collect();
+                        results.into_iter().map(|r| minimax(r, memory)).collect();
                     results
                         .iter()
                         .min_by_key(|n| match n.kind {
