@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, PartialEq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 enum Mark {
     O,
     X,
@@ -43,22 +43,26 @@ struct Board {
 impl Board {
     fn new() -> Self {
         Board {
-            marks: [None; 9], state: State::Turn(Mark::X), }
+            marks: [None; 9],
+            state: State::Turn(Mark::X),
+        }
     }
 
     fn print(&self) {
         for i in 0..9 {
-            print!("{}", match self.marks[i as usize] {
-                None => (b'0' + i) as char,
-                Some(m) => m.to_char(),
-            });
-            if i%3 == 2 {
+            print!(
+                "{}",
+                match self.marks[i as usize] {
+                    None => ' ', //(b'0' + i) as char,
+                    Some(m) => m.to_char(),
+                }
+            );
+            if i % 3 == 2 {
                 println!();
             } else {
                 print!("|");
             }
         }
-
     }
 
     fn get_new_state(&self) -> State {
@@ -67,13 +71,7 @@ impl Board {
             if mark.is_none() {
                 continue;
             }
-            if self
-                .marks
-                .iter()
-                .skip(row * 3)
-                .take(3)
-                .all(|&m| m == mark)
-            {
+            if self.marks.iter().skip(row * 3).take(3).all(|&m| m == mark) {
                 return State::Won(mark.unwrap());
             }
         }
@@ -102,7 +100,7 @@ impl Board {
                 .marks
                 .iter()
                 .skip(diag * 2)
-                .step_by(2 + diag * 2)
+                .step_by(4 - diag * 2)
                 .take(3)
                 .all(|&m| m == mark)
             {
@@ -135,8 +133,10 @@ impl Board {
             }
         }
     }
-    
-    fn is_full(&self) -> bool { self.marks.iter().all(|m| m.is_some()) }
+
+    fn is_full(&self) -> bool {
+        self.marks.iter().all(|m| m.is_some())
+    }
 }
 
 #[derive(Clone)]
@@ -169,33 +169,48 @@ fn minimax(node: MiniMaxNode) -> MiniMaxNode {
         NodeType::Unfinished(board) => {
             let state = board.get_new_state();
             match state {
-                State::Won(m) => MiniMaxNode {moves: node.moves, kind: NodeType::Value(m.to_value())},
+                State::Won(m) => MiniMaxNode {
+                    moves: node.moves,
+                    kind: NodeType::Value(m.to_value()),
+                },
                 State::Turn(m) => {
-                    let possible: Vec<u8> = board.marks.iter().enumerate().filter(|(_, &x)| x.is_none()).map(|i| i.0 as u8).collect();
+                    let possible: Vec<u8> = board
+                        .marks
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, &x)| x.is_none())
+                        .map(|i| i.0 as u8)
+                        .collect();
                     let mut results: Vec<MiniMaxNode> = Vec::new();
                     for mve in possible {
                         let mut new_board = board.clone();
                         new_board.place(mve as usize).unwrap();
-                        results.push(
-                            MiniMaxNode {
-                                moves: {
-                                    let mut new = node.moves.clone();
-                                    new.push(mve);
-                                    new
-                                },
-                                kind: NodeType::Unfinished(new_board)
-                            }
-                        )
+                        results.push(MiniMaxNode {
+                            moves: {
+                                let mut new = node.moves.clone();
+                                new.push(mve);
+                                new
+                            },
+                            kind: NodeType::Unfinished(new_board),
+                        })
                     }
-                    let results: Vec<MiniMaxNode> = results.into_iter().map(|r| minimax(r)).collect();
-                    results.iter().min_by_key(|n| {
-                        match n.kind {
-                            NodeType::Unfinished(_) => panic!("either memory or the rules of tic tac toe are broken"),
-                            NodeType::Value(i) => i * m.to_value(),
-                        }
-                    }).unwrap().clone()
+                    let results: Vec<MiniMaxNode> =
+                        results.into_iter().map(|r| minimax(r)).collect();
+                    results
+                        .iter()
+                        .min_by_key(|n| match n.kind {
+                            NodeType::Unfinished(_) => {
+                                panic!("either memory or the rules of tic tac toe are broken")
+                            }
+                            NodeType::Value(i) => i * m.to_value() * n.moves.len() as i8,
+                        })
+                        .unwrap()
+                        .clone()
+                }
+                State::Tie => MiniMaxNode {
+                    moves: node.moves,
+                    kind: NodeType::Value(0),
                 },
-                State::Tie => MiniMaxNode {moves: node.moves, kind: NodeType::Value(0)}
             }
         }
         _ => todo!(),
@@ -217,20 +232,28 @@ fn main() {
         std::io::stdin().read_line(&mut input).unwrap();
         let input: usize = match input.trim().parse() {
             Ok(u) => u,
-            Err(_) => {continue;}
+            Err(_) => {
+                continue;
+            }
         };
         if board.place(input).is_none() {
             println!("Invalid move.");
             continue;
         }
         board.print();
-        if !board.is_full() {
+        if !board.is_full()
+            && match board.get_new_state() {
+                State::Turn(_) => true,
+                _ => false,
+            }
+        {
             println!("Bot's turn (O)");
             let mve = MiniMaxNode::new(&board);
             board.place(mve.calculate() as usize);
         }
     }
 
+    board.print();
     match board.state {
         State::Turn(_) => panic!("What the fuck"),
         State::Won(m) => println!("{} Won!", m.to_char()),
