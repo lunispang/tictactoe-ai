@@ -234,7 +234,7 @@ fn minimax(node: MiniMaxNode, memory: &mut HashMap<Board, MiniMaxNode>) -> MiniM
 fn main() {
     let mut board = Board::new();
     while let State::Turn(_) = board.state {
-        print!("\x1B[2J");
+        print!("\x1B[2J\x1B[1;1H");
         println!("Your turn (X)");
         board.print();
         let mut input = String::new();
@@ -249,7 +249,6 @@ fn main() {
             println!("Invalid move.");
             continue;
         }
-        board.print();
         if !board.is_full()
             && match board.get_new_state() {
                 State::Turn(_) => true,
@@ -262,7 +261,7 @@ fn main() {
         }
     }
 
-    print!("\x1B[2J");
+    print!("\x1B[2J\x1B[1;1H");
     board.print();
     match board.state {
         State::Turn(_) => panic!("What the fuck"),
