@@ -260,6 +260,7 @@ fn main() {
         }
     }
 
+    print!("\x1B[2J");
     board.print();
     match board.state {
         State::Turn(_) => panic!("What the fuck"),
