@@ -222,7 +222,7 @@ fn minimax(node: MiniMaxNode, memory: &mut HashMap<Board, MiniMaxNode>) -> MiniM
                 },
             }
         }
-        _ => node,
+        NodeType::Value(_) => node,
     }
 }
 
