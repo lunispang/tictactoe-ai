@@ -235,7 +235,7 @@ fn main() {
     let mut board = Board::new();
     while let State::Turn(_) = board.state {
         print!("\x1B[2J\x1B[1;1H");
-        println!("Your turn (X)");
+        println!("Enter your move as a board index (0..=8)\nYour turn (X)");
         board.print();
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
